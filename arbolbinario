@@ -1,0 +1,252 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+struct Nodo {
+    int dato;
+    Nodo *der;
+    Nodo *izq;
+};
+
+Nodo *crearNodo(int);
+void insertar(Nodo *&, int);
+void mostrarArbol(Nodo *, int);
+bool busqueda(Nodo *, int);
+void preOrden(Nodo *);
+void inOrden(Nodo *);
+void postOrden(Nodo *);
+void eliminar(Nodo *&, int);
+void eliminarNodo(Nodo *&);
+Nodo *minimo(Nodo *);
+void balancearArbol(Nodo *&);
+void obtenerInorden(Nodo *, vector<int> &);
+Nodo *construirArbolEquilibrado(vector<int> &, int, int);
+
+Nodo *arbol = NULL;
+
+void menu();
+void ejecutarEjercicios();
+
+int main() {
+    menu();
+    return 0;
+}
+
+// Funcion Menu
+void menu() {
+    int opcion;
+    do {
+        system("cls");
+        cout << "\t.:MENU:." << endl;
+        cout << "1. Ejecutar ejercicios\n";
+        cout << "2. Salir\n\n";
+        cout << "Opcion: ";
+        cin >> opcion;
+
+        switch (opcion) {
+            case 1:
+                ejecutarEjercicios();
+                system("pause");
+                break;
+        }
+    } while (opcion != 2);
+}
+
+// Funcion para crear un nuevo nodo
+Nodo *crearNodo(int n) {
+    Nodo *nuevo_nodo = new Nodo();
+    nuevo_nodo->dato = n;
+    nuevo_nodo->der = NULL;
+    nuevo_nodo->izq = NULL;
+    return nuevo_nodo;
+}
+
+// Funcion para insertar elementos en el arbol
+void insertar(Nodo *&arbol, int n) {
+    if (arbol == NULL) {  // Si el arbol esta vacio
+        Nodo *nuevo_nodo = crearNodo(n);
+        arbol = nuevo_nodo;
+    } else {  // Si el arbol tiene un nodo o mas
+        int valorRaiz = arbol->dato;  // Obtener el valor de la raiz
+        if (n < valorRaiz) {          // Si el elemento es menor a la raiz, insertamos a la izq
+            insertar(arbol->izq, n);
+        } else {  // Si el arbol es mayor a la raiz, insertar a la derecha
+            insertar(arbol->der, n);
+        }
+    }
+}
+
+void mostrarArbol(Nodo *arbol, int contador) {
+    if (arbol == NULL) {
+        return;
+    } else {
+        mostrarArbol(arbol->der, contador + 1);
+        for (int i = 0; i < contador; i++) {
+            cout << "    ";
+        }
+        cout << arbol->dato << endl;
+        mostrarArbol(arbol->izq, contador + 1);
+    }
+}
+
+bool busqueda(Nodo *arbolBuscar, int n) {
+    if (arbolBuscar == NULL) {
+        return false;
+    } else if (arbolBuscar->dato == n) {
+        return true;
+    } else if (n < arbolBuscar->dato) {
+        return busqueda(arbolBuscar->izq, n);
+    } else {
+        return busqueda(arbolBuscar->der, n);
+    }
+}
+
+void preOrden(Nodo *arbol) {
+    if (arbol == NULL) {
+        return;
+    } else {
+        cout << arbol->dato << " - ";
+        preOrden(arbol->izq);
+        preOrden(arbol->der);
+    }
+}
+
+void inOrden(Nodo *arbol) {
+    if (arbol == NULL) {
+        return;
+    } else {
+        inOrden(arbol->izq);
+        cout << arbol->dato << " - ";
+        inOrden(arbol->der);
+    }
+}
+
+void postOrden(Nodo *arbol) {
+    if (arbol == NULL) {
+        return;
+    } else {
+        postOrden(arbol->izq);
+        postOrden(arbol->der);
+        cout << arbol->dato << " - ";
+    }
+}
+
+void eliminar(Nodo *&arbol, int n) {
+    if (arbol == NULL) {
+        return;
+    }
+    if (n < arbol->dato) {
+        eliminar(arbol->izq, n);
+    } else if (n > arbol->dato) {
+        eliminar(arbol->der, n);
+    } else {  // Encontramos el nodo a eliminar
+        eliminarNodo(arbol);
+    }
+}
+
+void eliminarNodo(Nodo *&nodoEliminar) {
+    if (nodoEliminar->izq && nodoEliminar->der) {  // El nodo tiene dos hijos
+        Nodo *menor = minimo(nodoEliminar->der);  // Encontrar el nodo menor del subarbol derecho
+        nodoEliminar->dato = menor->dato;
+        eliminar(nodoEliminar->der, menor->dato);
+    } else if (nodoEliminar->izq) {  // El nodo tiene un hijo izquierdo
+        Nodo *aux = nodoEliminar;
+        nodoEliminar = nodoEliminar->izq;
+        delete aux;
+    } else if (nodoEliminar->der) {  // El nodo tiene un hijo derecho
+        Nodo *aux = nodoEliminar;
+        nodoEliminar = nodoEliminar->der;
+        delete aux;
+    } else {  // El nodo no tiene hijos
+        delete nodoEliminar;
+        nodoEliminar = NULL;
+    }
+}
+
+Nodo *minimo(Nodo *arbol) {
+    if (arbol == NULL) {
+        return NULL;
+    }
+    if (arbol->izq) {
+        return minimo(arbol->izq);
+    } else {
+        return arbol;
+    }
+}
+
+void obtenerInorden(Nodo *arbol, vector<int> &inorden) {
+    if (arbol == NULL) {
+        return;
+    }
+    obtenerInorden(arbol->izq, inorden);
+    inorden.push_back(arbol->dato);
+    obtenerInorden(arbol->der, inorden);
+}
+
+Nodo *construirArbolEquilibrado(vector<int> &inorden, int inicio, int fin) {
+    if (inicio > fin) {
+        return NULL;
+    }
+    int mid = (inicio + fin) / 2;
+    Nodo *nodo = crearNodo(inorden[mid]);
+    nodo->izq = construirArbolEquilibrado(inorden, inicio, mid - 1);
+    nodo->der = construirArbolEquilibrado(inorden, mid + 1, fin);
+    return nodo;
+}
+
+void balancearArbol(Nodo *&arbol) {
+    vector<int> inorden;
+    obtenerInorden(arbol, inorden);
+    arbol = construirArbolEquilibrado(inorden, 0, inorden.size() - 1);
+}
+
+void ejecutarEjercicios() {
+    // Ejercicio 1
+    arbol = NULL;
+    int valores1[] = {20, 15, 47, 23, 11, 5, 3};
+    for (int val : valores1) {
+        insertar(arbol, val);
+    }
+    cout << "Ejercicio 1:\n";
+    mostrarArbol(arbol, 0);
+
+    // Ejercicio 3
+    int valores3[] = {13, 45, 8};
+    for (int val : valores3) {
+        insertar(arbol, val);
+    }
+    cout << "\nEjercicio 3:\n";
+    mostrarArbol(arbol, 0);
+
+    // Ejercicio 5
+    int eliminar5[] = {45, 47, 11};
+    for (int val : eliminar5) {
+        eliminar(arbol, val);
+    }
+    cout << "\nEjercicio 5:\n";
+    mostrarArbol(arbol, 0);
+
+    // Ejercicio 7
+    arbol = NULL;
+    int valores7[] = {14, 15, 4, 9, 7, 18, 3, 5, 16, 1, 20, 17};
+    for (int val : valores7) {
+        insertar(arbol, val);
+    }
+    int valoresInsertar7[] = {10, 2, 6, 21, 8};
+    for (int val : valoresInsertar7) {
+        insertar(arbol, val);
+    }
+    int eliminar7[] = {21, 18, 9};
+    for (int val : eliminar7) {
+        eliminar(arbol, val);
+    }
+    cout << "\nEjercicio 7:\n";
+    mostrarArbol(arbol, 0);
+
+    // Ejercicio 8
+    balancearArbol(arbol);
+    cout << "\nEjercicio 8 (Arbol balanceado):\n";
+    mostrarArbol(arbol, 0);
+}
